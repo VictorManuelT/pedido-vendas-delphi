@@ -1,0 +1,19 @@
+unit UOrderRepository;
+
+interface
+
+uses
+  System.Generics.Collections,
+  UOrder;
+
+type
+  IPedidoRepository = interface ['{D7B7D0B1-7F3B-4C4E-8B26-5E1D5B7D1003}']
+
+    procedure Salvar(PPedido: TOrder);
+    function ObterPorId(PId: Integer): TOrder;
+    function Listar: TObjectList<TOrder>;
+  end;
+
+implementation
+
+end.

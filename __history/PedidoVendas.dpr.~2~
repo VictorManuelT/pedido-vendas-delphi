@@ -1,0 +1,17 @@
+program PedidoVendas;
+
+uses
+  Vcl.Forms,
+  UPrincipal in 'src\Apresentacao\Forms\UPrincipal.pas' {Form1},
+  UProduct in 'src\Domain\Entities\UProduct.pas',
+  UDomainException in 'src\Domain\Exceptions\UDomainException.pas',
+  UCustomer in 'src\Domain\Entities\UCustomer.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TForm1, Form1);
+  Application.Run;
+end.

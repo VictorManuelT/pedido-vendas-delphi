@@ -1,0 +1,91 @@
+unit UCreateOrder;
+
+interface
+
+uses
+  UOrderDTO,
+  UCustomerRepository,
+  UProductRepository,
+  UOrderRepository;
+
+type
+  TCreateOrder = class
+  private
+    FClienteRepository: TCustomerRepository;
+    FProdutoRepository: TProductRepository;
+    FPedidoRepository: IPedidoRepository;
+  public
+    constructor Create(
+      AClienteRepository: TCustomerRepository;
+      AProdutoRepository: TProductRepository;
+      APedidoRepository: IPedidoRepository
+    );
+
+    procedure Execute(const ADTO: TPedidoDTO);
+  end;
+
+implementation
+
+uses
+  System.SysUtils,
+  UCustomer,
+  UProduct,
+  UOrder,
+  UDomainException,
+  UOrderItemDTO;
+
+constructor TCreateOrder.Create(
+  AClienteRepository: TCustomerRepository;
+  AProdutoRepository: TProductRepository;
+  APedidoRepository: IPedidoRepository
+);
+begin
+  FClienteRepository := AClienteRepository;
+  FProdutoRepository := AProdutoRepository;
+  FPedidoRepository := APedidoRepository;
+end;
+
+procedure TCreateOrder.Execute(const ADTO: TPedidoDTO);
+var
+  Cliente: TCustomer;
+  Produto: TProduct;
+  Pedido: TOrder;
+  ItemDTO: TOrderItemDTO;
+begin
+  Cliente := FClienteRepository.ObterPorId(ADTO.ClienteId);
+
+  if not Assigned(Cliente) then
+    raise EDomainException.Create(
+      'Cliente não encontrado.'
+    );
+
+  if Length(ADTO.Itens) = 0 then
+    raise EDomainException.Create(
+      'O pedido deve possuir pelo menos um item.'
+    );
+
+  Pedido := TOrder.Create(Cliente);
+
+  for ItemDTO in ADTO.Itens do
+  begin
+    Produto := FProdutoRepository.ObterPorId(
+      ItemDTO.ProdutoId
+    );
+
+    if not Assigned(Produto) then
+      raise EDomainException.CreateFmt(
+        'Produto %d não encontrado.',
+        [ItemDTO.ProdutoId]
+      );
+
+    Pedido.AdicionarItem(
+      Produto,
+      ItemDTO.Quantidade,
+      Produto.PrecoVenda
+    );
+  end;
+
+  FPedidoRepository.Salvar(Pedido);
+end;
+
+end.

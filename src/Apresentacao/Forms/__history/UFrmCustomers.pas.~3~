@@ -1,0 +1,94 @@
+unit UFrmCustomers;
+
+interface
+
+uses
+  Winapi.Windows,
+  Winapi.Messages,
+  System.SysUtils,
+  System.Variants,
+  System.Classes,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Dialogs,
+  Vcl.StdCtrls,
+  Vcl.Grids,
+  Vcl.DBGrids;
+
+type
+  TFrmCustomers = class(TForm)
+    lblTitle: TLabel;
+    lblName: TLabel;
+    lblCpfCnpj: TLabel;
+    lblCity: TLabel;
+    edtName: TEdit;
+    edtCpfCnpj: TEdit;
+    edtCity: TEdit;
+    btnSave: TButton;
+    btnClear: TButton;
+    btnClose: TButton;
+    grdCustomers: TStringGrid;
+    procedure btnSaveClick(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
+    procedure btnCloseClick(Sender: TObject);
+  private
+    procedure ClearFields;
+    procedure ConfigureGrid;
+  public
+    procedure LoadCustomers;
+  end;
+
+var
+  FrmCustomers: TFrmCustomers;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFrmCustomers.ConfigureGrid;
+begin
+  grdCustomers.ColCount := 4;
+  grdCustomers.RowCount := 1;
+  grdCustomers.FixedRows := 1;
+
+  grdCustomers.Cells[0, 0] := 'ID';
+  grdCustomers.Cells[1, 0] := 'Name';
+  grdCustomers.Cells[2, 0] := 'CPF/CNPJ';
+  grdCustomers.Cells[3, 0] := 'City';
+
+  grdCustomers.ColWidths[0] := 60;
+  grdCustomers.ColWidths[1] := 250;
+  grdCustomers.ColWidths[2] := 150;
+  grdCustomers.ColWidths[3] := 180;
+end;
+
+procedure TFrmCustomers.LoadCustomers;
+begin
+  { Será conectado ao TListarClientes posteriormente. }
+end;
+
+procedure TFrmCustomers.ClearFields;
+begin
+  edtName.Clear;
+  edtCpfCnpj.Clear;
+  edtCity.Clear;
+  edtName.SetFocus;
+end;
+
+procedure TFrmCustomers.btnSaveClick(Sender: TObject);
+begin
+  { Será conectado ao TCadastrarCliente posteriormente. }
+end;
+
+procedure TFrmCustomers.btnClearClick(Sender: TObject);
+begin
+  ClearFields;
+end;
+
+procedure TFrmCustomers.btnCloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+end.

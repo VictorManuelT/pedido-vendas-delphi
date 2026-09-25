@@ -1,0 +1,42 @@
+unit URegisterProduct;
+
+interface
+
+uses
+  UProductDTO,
+  UProductRepository;
+
+type
+  TCadastrarProduto = class
+  private
+    FRepository: TProductRepository;
+  public
+    constructor Create(ARepository: TProductRepository);
+
+    procedure Execute(const ADTO: TProductDTO);
+  end;
+
+implementation
+
+uses
+  UProduct;
+
+constructor TCadastrarProduto.Create(ARepository: TProductRepository);
+begin
+  FRepository := ARepository;
+end;
+
+procedure TCadastrarProduto.Execute(const ADTO: TProductDTO);
+var
+  UProduct: TProduct;
+begin
+  UProduct := TProduct.Create(
+    ADTO.Descricao,
+    ADTO.PrecoVenda,
+    ADTO.UnidadeMedida
+  );
+
+  FRepository.Salvar(UProduct);
+end;
+
+end.

@@ -1,0 +1,84 @@
+unit UOrder;
+
+interface
+
+uses
+  System.Generics.Collections,
+  UCustomer,
+  UProduct,
+  UOrderItem;
+
+type
+  TOrder = class
+  private
+    FId: Integer;
+    FCliente: TCustomer;
+    FItens: TObjectList<TOrderItem>;
+
+    procedure ValidarCliente(PCliente: TCustomer);
+  public
+    constructor Create(PCliente: TCustomer);
+    destructor Destroy; override;
+
+    procedure AdicionarItem(PProduto: TProduct; PQuantidade: Currency; PValorUnitario: Currency);
+
+    function Total: Currency;
+
+    property Id: Integer read FId write FId;
+    property Cliente: TCustomer read FCliente;
+    property Itens: TObjectList<TOrderItem> read FItens;
+  end;
+
+implementation
+
+uses
+  UDomainException;
+
+{ TOrder }
+
+constructor TOrder.Create(PCliente: TCustomer);
+begin
+  ValidarCliente(PCliente);
+
+  FCliente := PCliente;
+  FItens := TObjectList<TOrderItem>.Create(True);
+end;
+
+destructor TOrder.Destroy;
+begin
+  FItens.Free;
+  inherited;
+end;
+
+procedure TOrder.ValidarCliente(PCliente: TCustomer);
+begin
+  if not Assigned(PCliente) then
+    raise EDomainException.Create(
+      'O cliente do pedido é obrigatório.'
+    );
+end;
+
+procedure TOrder.AdicionarItem(
+  PProduto: TProduct;
+  PQuantidade: Currency;
+  PValorUnitario: Currency
+);
+var
+  Item: TOrderItem;
+begin
+  Item := TOrderItem.Create(PProduto, PQuantidade, PValorUnitario);
+
+  FItens.Add(Item);
+end;
+
+function TOrder.Total: Currency;
+var
+  Item: TOrderItem;
+begin
+  Result := 0;
+
+  for Item in FItens do
+    Result := Result + Item.Total;
+end;
+
+end.

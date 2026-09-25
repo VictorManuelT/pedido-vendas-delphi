@@ -1,0 +1,14 @@
+﻿[
+  {
+    "id": 1,
+    "nome": "Teste Pessoa",
+    "cpfCnpj": "112.222.459-14",
+    "cidade": "Santa Tereza Do Oeste"
+  },
+  {
+    "id": 2,
+    "nome": "TEST 2",
+    "cpfCnpj": "456987898874",
+    "cidade": "dfffffffffffffffffffffffff"
+  }
+]

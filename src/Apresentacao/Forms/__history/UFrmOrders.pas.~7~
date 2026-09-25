@@ -1,0 +1,182 @@
+unit UFrmOrders;
+
+interface
+
+uses
+  Winapi.Windows,
+  Winapi.Messages,
+  System.SysUtils,
+  System.Variants,
+  System.Classes,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Dialogs,
+  Vcl.StdCtrls,
+  Vcl.Grids;
+
+type
+  TFrmOrders = class(TForm)
+    lblTitle: TLabel;
+    lblCustomer: TLabel;
+    lblProduct: TLabel;
+    lblQuantity: TLabel;
+    lblUnitPrice: TLabel;
+    lblTotalCaption: TLabel;
+    cmbCustomer: TComboBox;
+    cmbProduct: TComboBox;
+    edtQuantity: TEdit;
+    edtUnitPrice: TEdit;
+    btnAddItem: TButton;
+    btnSave: TButton;
+    btnClose: TButton;
+    grdItems: TStringGrid;
+    procedure btnAddItemClick(Sender: TObject);
+    procedure btnSaveClick(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
+    procedure btnCloseClick(Sender: TObject);
+    procedure cmbProductChange(Sender: TObject);
+  private
+    procedure ConfigureGrid;
+    procedure ClearOrder;
+    procedure UpdateTotal;
+  public
+    procedure LoadCustomers;
+    procedure LoadProducts;
+  end;
+
+var
+  FrmOrders: TFrmOrders;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFrmOrders.ConfigureGrid;
+begin
+  grdItems.ColCount := 5;
+  grdItems.RowCount := 1;
+  grdItems.FixedRows := 1;
+
+  grdItems.Cells[0, 0] := 'Produto';
+  grdItems.Cells[1, 0] := 'Quantidade';
+  grdItems.Cells[2, 0] := 'Preço Unitario';
+  grdItems.Cells[3, 0] := 'Total';
+  grdItems.Cells[4, 0] := 'ID Produto';
+
+  grdItems.ColWidths[0] := 300;
+  grdItems.ColWidths[1] := 100;
+  grdItems.ColWidths[2] := 120;
+  grdItems.ColWidths[3] := 120;
+  grdItems.ColWidths[4] := 90;
+end;
+
+procedure TFrmOrders.LoadCustomers;
+begin
+  { Será conectado ao TListarClientes posteriormente. }
+end;
+
+procedure TFrmOrders.LoadProducts;
+begin
+  { Será conectado ao TListarProdutos posteriormente. }
+end;
+
+procedure TFrmOrders.cmbProductChange(Sender: TObject);
+begin
+  { Posteriormente vamos buscar o preço do Product selecionado. }
+end;
+
+procedure TFrmOrders.btnAddItemClick(Sender: TObject);
+var
+  Quantity: Currency;
+  UnitPrice: Currency;
+  LineTotal: Currency;
+  Row: Integer;
+begin
+  if cmbProduct.ItemIndex < 0 then
+  begin
+    ShowMessage('Nenhum produto foi selecionado.');
+    Exit;
+  end;
+
+  if not TryStrToCurr(edtQuantity.Text, Quantity) then
+  begin
+    ShowMessage('Informe uma quantidade valida.');
+    Exit;
+  end;
+
+  if not TryStrToCurr(edtUnitPrice.Text, UnitPrice) then
+  begin
+    ShowMessage('Informe um preço unitario valido.');
+    Exit;
+  end;
+
+  if Quantity <= 0 then
+  begin
+    ShowMessage('A quantidade não pode ser menor ou igual a zero.');
+    Exit;
+  end;
+
+  if UnitPrice < 0 then
+  begin
+    ShowMessage('O preço unitario não pode ser negativo.');
+    Exit;
+  end;
+
+  LineTotal := Quantity * UnitPrice;
+
+  Row := grdItems.RowCount;
+
+  grdItems.RowCount := Row + 1;
+
+  grdItems.Cells[0, Row] := cmbProduct.Text;
+  grdItems.Cells[1, Row] := CurrToStr(Quantity);
+  grdItems.Cells[2, Row] := CurrToStr(UnitPrice);
+  grdItems.Cells[3, Row] := CurrToStr(LineTotal);
+  grdItems.Cells[4, Row] := IntToStr(cmbProduct.ItemIndex);
+
+  UpdateTotal;
+end;
+
+procedure TFrmOrders.UpdateTotal;
+var
+  I: Integer;
+  Total: Currency;
+begin
+  Total := 0;
+
+  for I := 1 to grdItems.RowCount - 1 do
+    Total := Total + StrToCurrDef(grdItems.Cells[3, I], 0);
+
+  lblTotal.Caption := FormatCurr('Total: R$ #,##0.00', Total);
+end;
+
+procedure TFrmOrders.btnSaveClick(Sender: TObject);
+begin
+  { Será conectado ao TCriarPedido posteriormente. }
+end;
+
+procedure TFrmOrders.ClearOrder;
+begin
+  cmbCustomer.ItemIndex := -1;
+  cmbProduct.ItemIndex := -1;
+
+  edtQuantity.Clear;
+  edtUnitPrice.Clear;
+
+  grdItems.RowCount := 1;
+
+  UpdateTotal;
+end;
+
+procedure TFrmOrders.btnClearClick(Sender: TObject);
+begin
+  ClearOrder;
+end;
+
+procedure TFrmOrders.btnCloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+end.

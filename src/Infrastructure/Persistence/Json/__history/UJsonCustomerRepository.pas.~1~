@@ -1,0 +1,161 @@
+unit UJsonCustomerRepository;
+
+interface
+
+uses
+  System.Generics.Collections,
+  UCustomer,
+  UCustomerRepository,
+  UJsonDatabase;
+
+type
+  TJsonCustomerRepository = class(TInterfacedObject, TCustomerRepository)
+  private
+    FDatabase: TJsonDatabase;
+
+    function ProximoId: Integer;
+  public
+    constructor Create(ADatabase: TJsonDatabase);
+
+    procedure Salvar(ACliente: TCustomer);
+    function ObterPorId(AId: Integer): TCustomer;
+    function Listar: TObjectList<TCustomer>;
+  end;
+
+implementation
+
+uses
+  System.SysUtils,
+  System.JSON;
+
+constructor TJsonCustomerRepository.Create(
+  ADatabase: TJsonDatabase
+);
+begin
+  FDatabase := ADatabase;
+end;
+
+function TJsonCustomerRepository.ProximoId: Integer;
+var
+  Clientes: TObjectList<TCustomer>;
+  Cliente: TCustomer;
+  MaiorId: Integer;
+begin
+  MaiorId := 0;
+  Clientes := Listar;
+
+  try
+    for Cliente in Clientes do
+      if Cliente.Id > MaiorId then
+        MaiorId := Cliente.Id;
+
+    Result := MaiorId + 1;
+  finally
+    Clientes.Free;
+  end;
+end;
+
+procedure TJsonCustomerRepository.Salvar(
+  ACliente: TCustomer
+);
+var
+  JsonArray: TJSONArray;
+  JsonObject: TJSONObject;
+begin
+  if ACliente.Id = 0 then
+    ACliente.Id := ProximoId;
+
+  JsonArray := FDatabase.CarregarArray('clientes.json');
+
+  try
+    JsonObject := TJSONObject.Create;
+
+    JsonObject.AddPair(
+      'id',
+      TJSONNumber.Create(ACliente.Id)
+    );
+
+    JsonObject.AddPair(
+      'nome',
+      ACliente.Nome
+    );
+
+    JsonObject.AddPair(
+      'cpfCnpj',
+      ACliente.CpfCnpj
+    );
+
+    JsonObject.AddPair(
+      'cidade',
+      ACliente.Cidade
+    );
+
+    JsonArray.AddElement(JsonObject);
+
+    FDatabase.SalvarArray(
+      'clientes.json',
+      JsonArray
+    );
+  finally
+    JsonArray.Free;
+  end;
+end;
+
+function TJsonCustomerRepository.ObterPorId(
+  AId: Integer
+): TCustomer;
+var
+  Lista: TObjectList<TCustomer>;
+  Cliente: TCustomer;
+begin
+  Result := nil;
+
+  Lista := Listar;
+
+  try
+    for Cliente in Lista do
+    begin
+      if Cliente.Id = AId then
+      begin
+        Result := Cliente;
+        Lista.Extract(Cliente);
+        Break;
+      end;
+    end;
+  finally
+    Lista.Free;
+  end;
+end;
+
+function TJsonCustomerRepository.Listar: TObjectList<TCustomer>;
+var
+  JsonArray: TJSONArray;
+  JsonObject: TJSONObject;
+  Cliente: TCustomer;
+  I: Integer;
+begin
+  Result := TObjectList<TCustomer>.Create(True);
+
+  JsonArray := FDatabase.CarregarArray('clientes.json');
+
+  try
+    for I := 0 to JsonArray.Count - 1 do
+    begin
+      JsonObject := JsonArray.Items[I] as TJSONObject;
+
+      Cliente := TCustomer.Create(
+        JsonObject.GetValue<string>('nome'),
+        JsonObject.GetValue<string>('cpfCnpj'),
+        JsonObject.GetValue<string>('cidade')
+      );
+
+      Cliente.Id := JsonObject.GetValue<Integer>('id');
+
+      Result.Add(Cliente);
+    end;
+  finally
+    JsonArray.Free;
+  end;
+end;
+
+end.
