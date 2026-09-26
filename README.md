@@ -1,29 +1,26 @@
-# PedidoVendas
+# PedidoDeVendas
 
-Sistema de gerenciamento de clientes, produtos e pedidos desenvolvido em Delphi,
-com foco na aplicação de princípios SOLID, conceitos de Domain-Driven Design (DDD)
-e persistência de dados em arquivos JSON.
+Sistema para gerenciamento de clientes, produtos e pedidos de venda desenvolvido em Delphi 12,
+com foco na aplicação de princípios SOLID, conceitos de DDD
+e persistência utilizando arquivos JSON.
 
 ## Objetivo
 
-O projeto foi desenvolvido como parte de um teste técnico, buscando demonstrar:
+O projeto foi desenvolvido buscando demonstrar:
 
 - Organização em camadas
 - Separação de responsabilidades
 - Aplicação dos princípios SOLID
 - Modelagem de regras de negócio no domínio
 - Uso de DTOs na camada de aplicação
-- Repository Pattern
-- Persistência desacoplada da regra de negócio
 - Uso de interfaces
 - Persistência utilizando arquivos JSON
 - Interface gráfica utilizando VCL
 
 ## Tecnologias
 
-- Delphi
+- Delphi 12
 - VCL
-- Object Pascal
 - JSON
 - Arquitetura em camadas
 - SOLID
