@@ -52,6 +52,9 @@ O projeto foi desenvolvido buscando demonstrar:
 
 ## Estrutura do projeto
 
+Fiz uma representação em um formato ilustrativo para facilitar
+a visualização de como ficou a organização do projeto.
+
 ```text
 PedidoVendas/
 ├── src/
