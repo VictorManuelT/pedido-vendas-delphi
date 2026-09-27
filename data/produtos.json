@@ -12,9 +12,15 @@
     "unidadeMedida": "Metros"
   },
   {
-    "id": 3,
-    "descricao": "Teste Produto 3",
-    "precoVenda": 50.0,
-    "unidadeMedida": "Caixa"
+    "id": 4,
+    "descricao": "Teste Produto 1",
+    "precoVenda": 15.0,
+    "unidadeMedida": "Unidade"
+  },
+  {
+    "id": 5,
+    "descricao": "Teste Produto 2.1",
+    "precoVenda": 5.0,
+    "unidadeMedida": "Metros"
   }
 ]

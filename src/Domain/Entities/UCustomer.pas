@@ -26,8 +26,6 @@ uses
   System.SysUtils,
   UDomainException;
 
-{ TCustomer }
-
 constructor TCustomer.Create( const PNome: string; const PCpfCnpj: string; const PCidade: string);
 begin
   FNome := Trim(PNome);

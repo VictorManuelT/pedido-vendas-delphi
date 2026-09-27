@@ -25,7 +25,13 @@ uses
   UCustomer,
   UProduct,
   UOrderDTO,
-  UOrderItemDTO, Vcl.NumberBox;
+  UOrderItemDTO,
+  UOrder,
+  UOrderItem,
+  Vcl.NumberBox,
+  UOrderRepository,
+  UProductRepository,
+  UCustomerRepository;
 
 type
   TFrmOrders = class(TForm)
@@ -43,18 +49,24 @@ type
     grdItems: TStringGrid;
     lblTotal: TLabel;
     nbbUnitPrice: TNumberBox;
+    bntExcluirItem: TButton;
     procedure btnAddItemClick(Sender: TObject);
     procedure btnSaveClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure cmbProductChange(Sender: TObject);
     procedure ConfigureGrid;
+    procedure bntExcluirItemClick(Sender: TObject);
   private
+    FEditingId: Integer;
     procedure ClearOrder;
     procedure UpdateTotal;
+    procedure LoadOrder(PId: Integer);
   public
+    constructor Create(AOwner: TComponent);
     procedure LoadCustomers;
     procedure LoadProducts;
+    procedure EditarPedido(PId: Integer);
   end;
 
 var
@@ -63,6 +75,12 @@ var
 implementation
 
 {$R *.dfm}
+
+constructor TFrmOrders.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FEditingId := 0;
+end;
 
 procedure TFrmOrders.ConfigureGrid;
 begin
@@ -204,6 +222,32 @@ begin
   end;
 end;
 
+procedure TFrmOrders.bntExcluirItemClick(Sender: TObject);
+var
+  Linha: Integer;
+  I: Integer;
+begin
+  Linha := grdItems.Row;
+
+  if Linha <= 0 then
+  begin
+    ShowMessage('Selecione um item para excluir.');
+    Exit;
+  end;
+
+  if MessageDlg('Deseja excluir o item selecionado?', mtConfirmation,[mbYes, mbNo], 0) <> mrYes then
+    Exit;
+
+  for I := Linha to grdItems.RowCount - 2 do
+  begin
+    grdItems.Rows[I].Assign(grdItems.Rows[I + 1]);
+  end;
+
+  grdItems.RowCount := grdItems.RowCount - 1;
+
+  UpdateTotal;
+end;
+
 procedure TFrmOrders.btnAddItemClick(Sender: TObject);
 var
   Quantity: Currency;
@@ -282,9 +326,9 @@ end;
 procedure TFrmOrders.btnSaveClick(Sender: TObject);
 var
   Database: TJsonDatabase;
-  CustomerRepository: TJsonCustomerRepository;
-  ProductRepository: TJsonProductRepository;
-  OrderRepository: TJsonOrderRepository;
+  CustomerRepository: TCustomerRepository;
+  ProductRepository: TProductRepository;
+  OrderRepository: IPedidoRepository;
   CriarPedido: TCreateOrder;
   BasePath: string;
   PedidoDTO: TPedidoDTO;
@@ -309,45 +353,60 @@ begin
   Database := TJsonDatabase.Create(BasePath);
   try
     CustomerRepository := TJsonCustomerRepository.Create(Database);
+    ProductRepository := TJsonProductRepository.Create(Database);
+
+    OrderRepository := TJsonOrderRepository.Create(Database,CustomerRepository,ProductRepository);
+
+    CriarPedido := TCreateOrder.Create(CustomerRepository,ProductRepository, OrderRepository);
+
     try
-      ProductRepository := TJsonProductRepository.Create(Database);
-      try
-        OrderRepository := TJsonOrderRepository.Create(Database, CustomerRepository, ProductRepository);
-        try
-          CriarPedido := TCreateOrder.Create(CustomerRepository, ProductRepository, OrderRepository);
-          try
-            PedidoDTO.ClienteId := Integer(cmbCustomer.Items.Objects[cmbCustomer.ItemIndex]);
+      PedidoDTO.Id := FEditingId;
 
-            SetLength(PedidoDTO.Itens, grdItems.RowCount - 1);
+      PedidoDTO.ClienteId := Integer(cmbCustomer.Items.Objects[cmbCustomer.ItemIndex]);
 
-            for I := 1 to grdItems.RowCount - 1 do
-            begin
-              ItemDTO.ProdutoId := StrToIntDef(grdItems.Cells[4, I], 0);
-              ItemDTO.Quantidade := StrToCurrDef(grdItems.Cells[1, I], 0);
+      SetLength( PedidoDTO.Itens,grdItems.RowCount - 1);
 
-              PedidoDTO.Itens[I - 1] := ItemDTO;
-            end;
+      for I := 1 to grdItems.RowCount - 1 do
+      begin
+        ItemDTO.ProdutoId := StrToIntDef(grdItems.Cells[4, I], 0);
+        ItemDTO.Quantidade := StrToCurrDef(grdItems.Cells[1, I], 0);
 
-            CriarPedido.Execute(PedidoDTO);
-
-          finally
-            CriarPedido.Free;
-          end;
-        finally
-          OrderRepository.Free;
-        end;
-      finally
-        ProductRepository.Free;
+        PedidoDTO.Itens[I - 1] := ItemDTO;
       end;
+
+      CriarPedido.Execute(PedidoDTO);
+
     finally
-      CustomerRepository.Free;
+      CriarPedido.Free;
     end;
+
   finally
+    OrderRepository := nil;
+    ProductRepository := nil;
+    CustomerRepository := nil;
     Database.Free;
   end;
 
-  ShowMessage('Pedido cadastrado com sucesso.');
-  ClearOrder;
+  if FEditingId = 0 then
+    ShowMessage('Pedido cadastrado com sucesso.')
+  else
+    ShowMessage('Pedido atualizado com sucesso.');
+
+  if FEditingId = 0 then
+    ClearOrder;
+
+  FEditingId := 0;
+end;
+
+procedure TFrmOrders.EditarPedido(PId: Integer);
+begin
+  FEditingId := PId;
+
+  LoadCustomers;
+  LoadProducts;
+  LoadOrder(PId);
+
+  lblTitle.Caption := 'Editar Pedido';
 end;
 
 procedure TFrmOrders.ClearOrder;
@@ -361,6 +420,79 @@ begin
   grdItems.RowCount := 1;
 
   UpdateTotal;
+end;
+
+procedure TFrmOrders.LoadOrder(PId: Integer);
+var
+  Database: TJsonDatabase;
+  CustomerRepository: TJsonCustomerRepository;
+  ProductRepository: TJsonProductRepository;
+  OrderRepository: TJsonOrderRepository;
+  Pedido: TOrder;
+  Item: TOrderItem;
+  I: Integer;
+  Row: Integer;
+  BasePath: string;
+begin
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    CustomerRepository := TJsonCustomerRepository.Create(Database);
+    try
+      ProductRepository := TJsonProductRepository.Create(Database);
+      try
+        OrderRepository := TJsonOrderRepository.Create( Database, CustomerRepository,ProductRepository);
+
+        try
+          Pedido := OrderRepository.ObterPorId(PId);
+
+          if not Assigned(Pedido) then
+          begin
+            ShowMessage('Pedido não encontrado.');
+            Exit;
+          end;
+
+          for I := 0 to cmbCustomer.Items.Count - 1 do
+          begin
+            if Integer(cmbCustomer.Items.Objects[I]) = Pedido.Cliente.Id then
+            begin
+              cmbCustomer.ItemIndex := I;
+              Break;
+            end;
+          end;
+
+          grdItems.RowCount := 1;
+
+          for Item in Pedido.Itens do
+          begin
+            Row := grdItems.RowCount;
+            grdItems.RowCount := Row + 1;
+
+            grdItems.Cells[0, Row] := Item.Produto.Descricao;
+            grdItems.Cells[1, Row] := CurrToStr(Item.Quantidade);
+            grdItems.Cells[2, Row] := CurrToStr(Item.ValorUnitario);
+            grdItems.Cells[3, Row] := CurrToStr(Item.Quantidade * Item.ValorUnitario);
+            grdItems.Cells[4, Row] := IntToStr(Item.Produto.Id);
+          end;
+
+          UpdateTotal;
+
+        finally
+          OrderRepository.Free;
+        end;
+
+      finally
+        ProductRepository := nil;
+      end;
+
+    finally
+      CustomerRepository := nil;
+    end;
+
+  finally
+    Database.Free;
+  end;
 end;
 
 procedure TFrmOrders.btnClearClick(Sender: TObject);

@@ -3,7 +3,7 @@ object FrmPrincipal: TFrmPrincipal
   Top = 0
   Caption = 'Menu Inicial'
   ClientHeight = 229
-  ClientWidth = 361
+  ClientWidth = 187
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -27,7 +27,7 @@ object FrmPrincipal: TFrmPrincipal
     ParentFont = False
   end
   object btnCustomers: TButton
-    Left = 0
+    Left = 8
     Top = 54
     Width = 170
     Height = 50
@@ -36,7 +36,7 @@ object FrmPrincipal: TFrmPrincipal
     OnClick = btnCustomersClick
   end
   object btnProducts: TButton
-    Left = 0
+    Left = 8
     Top = 110
     Width = 170
     Height = 50
@@ -45,11 +45,11 @@ object FrmPrincipal: TFrmPrincipal
     OnClick = btnProductsClick
   end
   object btnOrders: TButton
-    Left = 0
+    Left = 8
     Top = 166
     Width = 170
     Height = 50
-    Caption = 'Gerar Pedido'
+    Caption = 'Listar Pedidos'
     TabOrder = 2
     OnClick = btnOrdersClick
   end

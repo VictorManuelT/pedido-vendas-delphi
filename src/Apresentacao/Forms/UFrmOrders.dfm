@@ -2,8 +2,8 @@ object FrmOrders: TFrmOrders
   Left = 0
   Top = 0
   Caption = 'Orders'
-  ClientHeight = 600
-  ClientWidth = 950
+  ClientHeight = 543
+  ClientWidth = 512
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -93,8 +93,8 @@ object FrmOrders: TFrmOrders
     TabOrder = 2
   end
   object btnAddItem: TButton
-    Left = 480
-    Top = 148
+    Left = 24
+    Top = 177
     Width = 120
     Height = 30
     Caption = 'Adicionar Item'
@@ -102,8 +102,8 @@ object FrmOrders: TFrmOrders
     OnClick = btnAddItemClick
   end
   object btnSave: TButton
-    Left = 630
-    Top = 70
+    Left = 294
+    Top = 505
     Width = 100
     Height = 30
     Caption = 'Salvar'
@@ -111,8 +111,8 @@ object FrmOrders: TFrmOrders
     OnClick = btnSaveClick
   end
   object btnClose: TButton
-    Left = 736
-    Top = 70
+    Left = 399
+    Top = 505
     Width = 90
     Height = 30
     Caption = 'Fechar'
@@ -122,7 +122,7 @@ object FrmOrders: TFrmOrders
   object grdItems: TStringGrid
     Left = 24
     Top = 210
-    Width = 906
+    Width = 465
     Height = 280
     FixedCols = 0
     RowCount = 1
@@ -137,5 +137,14 @@ object FrmOrders: TFrmOrders
     Mode = nbmCurrency
     TabOrder = 4
     NegativeValueColor = clRed
+  end
+  object bntExcluirItem: TButton
+    Left = 150
+    Top = 177
+    Width = 120
+    Height = 30
+    Caption = 'Excluir Item'
+    TabOrder = 8
+    OnClick = bntExcluirItemClick
   end
 end

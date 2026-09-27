@@ -37,7 +37,7 @@ implementation
 {$R *.dfm}
 
 uses
-  UFrmCustomers, UFrmProducts, UFrmOrders;
+  UFrmCustomers, UFrmProducts, UFrmListOrders;
 
 procedure TFrmPrincipal.btnCustomersClick(Sender: TObject);
 var
@@ -67,12 +67,11 @@ end;
 
 procedure TFrmPrincipal.btnOrdersClick(Sender: TObject);
 var
-  Form: TFrmOrders;
+  Form: TFrmListOrders;
 begin
-  Form := TFrmOrders.Create(Self);
+  Form := TFrmListOrders.Create(Self);
   try
-    Form.LoadCustomers;
-    Form.LoadProducts;
+    Form.LoadOrders;
     Form.ShowModal;
   finally
     Form.Free;

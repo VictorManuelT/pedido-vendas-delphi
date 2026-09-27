@@ -33,11 +33,21 @@ type
     btnSave: TButton;
     btnClose: TButton;
     grdCustomers: TStringGrid;
+    bntEdit: TButton;
+    bntExcluir: TButton;
     procedure btnSaveClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
-    procedure ConfigureGrid;
+    procedure FormCreate(Sender: TObject);
+    procedure bntEditClick(Sender: TObject);
+    procedure grdCustomersSelectCell(Sender: TObject; ACol, ARow: LongInt;
+      var CanSelect: Boolean);
+    procedure bntExcluirClick(Sender: TObject);
   private
+    FEditingId, FSelectedRow: Integer;
+
+    procedure EditCustomer;
     procedure ClearFields;
+    procedure ConfigureGrid;
   public
     procedure LoadCustomers;
   end;
@@ -48,6 +58,21 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TFrmCustomers.FormCreate(Sender: TObject);
+begin
+  FEditingId := 0;
+  FSelectedRow := 0;
+
+  ConfigureGrid;
+  LoadCustomers;
+end;
+
+procedure TFrmCustomers.grdCustomersSelectCell(Sender: TObject; ACol,
+  ARow: LongInt; var CanSelect: Boolean);
+begin
+  FSelectedRow := ARow;
+end;
 
 procedure TFrmCustomers.ConfigureGrid;
 begin
@@ -70,10 +95,10 @@ var
   Clientes: TObjectList<TCustomer>;
   Cliente: TCustomer;
   I: Integer;
-  BasePath : string;
+  BasePath: string;
 begin
-  ConfigureGrid;
   BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
   Database := TJsonDatabase.Create(BasePath);
   try
     Repository := TJsonCustomerRepository.Create(Database);
@@ -94,15 +119,19 @@ begin
             grdCustomers.Cells[2, I + 1] := Cliente.CpfCnpj;
             grdCustomers.Cells[3, I + 1] := Cliente.Cidade;
           end;
+
         finally
           Clientes.Free;
         end;
+
       finally
         ListarClientes.Free;
       end;
+
     finally
       Repository := nil;
     end;
+
   finally
     Database.Free;
   end;
@@ -114,6 +143,8 @@ begin
   edtCpfCnpj.Clear;
   edtCity.Clear;
 
+  FEditingId := 0;
+
   edtName.SetFocus;
 end;
 
@@ -123,6 +154,7 @@ var
   Repository: TJsonCustomerRepository;
   CadastrarCliente: TCadastrarCliente;
   DTO: TCustomerDTO;
+  Cliente: TCustomer;
   BasePath: string;
 begin
   if Trim(edtName.Text) = '' then
@@ -146,21 +178,28 @@ begin
     Exit;
   end;
 
+  DTO.Id := FEditingId;
   DTO.Nome := Trim(edtName.Text);
   DTO.CpfCnpj := Trim(edtCpfCnpj.Text);
   DTO.Cidade := Trim(edtCity.Text);
 
   BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
   Database := TJsonDatabase.Create(BasePath);
   try
     Repository := TJsonCustomerRepository.Create(Database);
     try
-      CadastrarCliente := TCadastrarCliente.Create(Repository);
+
+      Cliente := TCustomer.Create(DTO.Nome,DTO.CpfCnpj,DTO.Cidade);
+
       try
-        CadastrarCliente.Execute(DTO);
+        Cliente.Id := DTO.Id;
+        Repository.Salvar(Cliente);
+
       finally
-        CadastrarCliente.Free;
+        Cliente.Free;
       end;
+
     finally
       Repository := nil;
     end;
@@ -168,11 +207,92 @@ begin
     Database.Free;
   end;
 
-  ShowMessage('Cliente cadastrado com sucesso.');
+  if FEditingId = 0 then
+    ShowMessage('Cliente cadastrado com sucesso.')
+  else
+    ShowMessage('Cliente atualizado com sucesso.');
 
   ClearFields;
   LoadCustomers;
 end;
+
+procedure TFrmCustomers.EditCustomer;
+begin
+  if FSelectedRow <= 0 then
+  begin
+    ShowMessage('Selecione um cliente para editar.');
+    Exit;
+  end;
+
+  FEditingId := StrToIntDef(grdCustomers.Cells[0, FSelectedRow],0);
+
+  if FEditingId = 0 then
+  begin
+    ShowMessage('Cliente inválido.');
+    Exit;
+  end;
+
+  edtName.Text := grdCustomers.Cells[1, FSelectedRow];
+  edtCpfCnpj.Text := grdCustomers.Cells[2, FSelectedRow];
+  edtCity.Text := grdCustomers.Cells[3, FSelectedRow];
+
+  edtName.SetFocus;
+end;
+
+procedure TFrmCustomers.bntEditClick(Sender: TObject);
+begin
+  EditCustomer;
+end;
+
+procedure TFrmCustomers.bntExcluirClick(Sender: TObject);
+var
+  Database: TJsonDatabase;
+  Repository: TJsonCustomerRepository;
+  BasePath: string;
+  Id: Integer;
+  Linha: Integer;
+begin
+  Linha := grdCustomers.Row;
+
+  if Linha <= 0 then
+  begin
+    ShowMessage('Selecione um cliente para excluir.');
+    Exit;
+  end;
+
+  Id := StrToIntDef(grdCustomers.Cells[0, Linha], 0);
+
+  if Id = 0 then
+  begin
+    ShowMessage('Não foi possível identificar o cliente selecionado.');
+    Exit;
+  end;
+
+  if MessageDlg('Deseja realmente excluir o cliente "' +grdCustomers.Cells[1, Linha] +'"?', mtConfirmation,[mbYes, mbNo],0) <> mrYes then
+    Exit;
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonCustomerRepository.Create(Database);
+    try
+      Repository.Excluir(Id);
+    finally
+      Repository.Free;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  ShowMessage('Cliente excluído com sucesso.');
+
+  FEditingId := 0;
+
+  ClearFields;
+  LoadCustomers;
+end;
+
 
 procedure TFrmCustomers.btnCloseClick(Sender: TObject);
 begin

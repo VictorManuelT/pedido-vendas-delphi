@@ -7,6 +7,7 @@ uses
 
 type
   TPedidoDTO = record
+    Id: Integer;
     ClienteId: Integer;
     Itens: TArray<TOrderItemDTO>;
   end;

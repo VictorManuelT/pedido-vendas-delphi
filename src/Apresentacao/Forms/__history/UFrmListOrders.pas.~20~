@@ -1,0 +1,223 @@
+unit UFrmListOrders;
+
+interface
+
+uses
+  Winapi.Windows,
+  Winapi.Messages,
+  System.SysUtils,
+  System.Variants,
+  System.Classes,
+  System.Generics.Collections,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Dialogs,
+  Vcl.Grids,
+  Vcl.ExtCtrls,
+  UFrmOrders,
+  Vcl.StdCtrls,
+  UOrder,
+  UJsonDataBase,
+  UJsonOrderRepository,
+  UJsonCustomerRepository,
+  UJsonProductRepository;
+
+type
+  TFrmListOrders = class(TForm)
+    grdOrders: TStringGrid;
+    PanelPedido: TPanel;
+    bntNovoPedido: TButton;
+    bntEdit: TButton;
+    bntExcluir: TButton;
+    procedure bntNovoPedidoClick(Sender: TObject);
+    procedure bntEditClick(Sender: TObject);
+    procedure bntExcluirClick(Sender: TObject);
+  private
+    procedure ConfigureGrid;
+  public
+    procedure LoadOrders;
+  end;
+
+var
+  FrmListOrders: TFrmListOrders;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFrmListOrders.ConfigureGrid;
+begin
+  grdOrders.Cells[0, 0] := 'ID Pedido';
+  grdOrders.Cells[1, 0] := 'ID Cliente';
+  grdOrders.Cells[2, 0] := 'Cliente';
+  grdOrders.Cells[3, 0] := 'Valor Total';
+
+  grdOrders.ColWidths[0] := 90;
+  grdOrders.ColWidths[1] := 90;
+  grdOrders.ColWidths[2] := 300;
+  grdOrders.ColWidths[3] := 120;
+end;
+
+procedure TFrmListOrders.LoadOrders;
+var
+  Database: TJsonDatabase;
+  CustomerRepository: TJsonCustomerRepository;
+  ProductRepository: TJsonProductRepository;
+  OrderRepository: TJsonOrderRepository;
+  Pedidos: TObjectList<TOrder>;
+  Pedido: TOrder;
+  I: Integer;
+  BasePath: string;
+begin
+  ConfigureGrid;
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    CustomerRepository := TJsonCustomerRepository.Create(Database);
+    try
+      ProductRepository := TJsonProductRepository.Create(Database);
+      OrderRepository := TJsonOrderRepository.Create( Database,CustomerRepository,ProductRepository);
+
+      try
+        Pedidos := OrderRepository.Listar;
+
+        try
+          grdOrders.RowCount := Pedidos.Count + 1;
+
+          for I := 0 to Pedidos.Count - 1 do
+          begin
+            Pedido := Pedidos[I];
+            grdOrders.Cells[0, I + 1] := IntToStr(Pedido.Id);
+            grdOrders.Cells[1, I + 1] := IntToStr(Pedido.Cliente.Id);
+            grdOrders.Cells[2, I + 1] := Pedido.Cliente.Nome;
+            grdOrders.Cells[3, I + 1] := FormatFloat('R$ #,##0.00', Pedido.Total);
+          end;
+
+        finally
+          Pedidos.Free;
+        end;
+
+      finally
+        OrderRepository.Free;
+      end;
+
+    finally
+      ProductRepository := nil;
+      CustomerRepository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
+end;
+
+procedure TFrmListOrders.bntEditClick(Sender: TObject);
+var
+  Linha: Integer;
+  IdPedido: Integer;
+  Frm: TFrmOrders;
+begin
+  Linha := grdOrders.Row;
+
+  if Linha <= 0 then
+  begin
+    ShowMessage('Selecione um pedido para editar.');
+    Exit;
+  end;
+
+  IdPedido := StrToIntDef(grdOrders.Cells[0, Linha], 0);
+
+  if IdPedido <= 0 then
+  begin
+    ShowMessage('Pedido inválido.');
+    Exit;
+  end;
+
+  Frm := TFrmOrders.Create(Self);
+  try
+    Frm.EditarPedido(IdPedido);
+    Frm.ShowModal;
+  finally
+    Frm.Free;
+  end;
+
+  LoadOrders;
+end;
+
+procedure TFrmListOrders.bntExcluirClick(Sender: TObject);
+var
+  Database: TJsonDatabase;
+  CustomerRepository: TJsonCustomerRepository;
+  ProductRepository: TJsonProductRepository;
+  OrderRepository: TJsonOrderRepository;
+  Linha: Integer;
+  IdPedido: Integer;
+  BasePath: string;
+begin
+  Linha := grdOrders.Row;
+
+  if Linha <= 0 then
+  begin
+    ShowMessage('Selecione um pedido para excluir.');
+    Exit;
+  end;
+
+  IdPedido := StrToIntDef(grdOrders.Cells[0, Linha], 0);
+
+  if IdPedido <= 0 then
+  begin
+    ShowMessage('Pedido inválido.');
+    Exit;
+  end;
+
+  if MessageDlg('Deseja realmente excluir o pedido ' + IntToStr(IdPedido) + '?',mtConfirmation, [mbYes, mbNo], 0) <> mrYes then
+    Exit;
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    CustomerRepository := TJsonCustomerRepository.Create(Database);
+    try
+      ProductRepository := TJsonProductRepository.Create(Database);
+      try
+        OrderRepository := TJsonOrderRepository.Create(Database,CustomerRepository,ProductRepository);
+
+        try
+          OrderRepository.Excluir(IdPedido);
+        finally
+          OrderRepository.Free;
+        end;
+
+      finally
+        ProductRepository := nil;
+      end;
+    finally
+      CustomerRepository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  ShowMessage('Pedido excluído com sucesso.');
+
+  LoadOrders;
+end;
+
+procedure TFrmListOrders.bntNovoPedidoClick(Sender: TObject);
+var
+  Form: TFrmOrders;
+begin
+  Form := TFrmOrders.Create(Self);
+  try
+    Form.LoadCustomers;
+    Form.LoadProducts;
+    Form.ShowModal;
+    LoadOrders;
+  finally
+    Form.Free;
+  end;
+end;
+
+end.

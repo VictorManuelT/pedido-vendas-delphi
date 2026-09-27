@@ -28,10 +28,16 @@ end;
 
 procedure TCadastrarProduto.Execute(const PDTO: TProductDTO);
 var
-  UProduct: TProduct;
+  Produto: TProduct;
 begin
-  UProduct := TProduct.Create(PDTO.Descricao, PDTO.PrecoVenda, PDTO.UnidadeMedida);
-  FRepository.Salvar(UProduct);
+  Produto := TProduct.Create(PDTO.Descricao, PDTO.PrecoVenda, PDTO.UnidadeMedida);
+  try
+    Produto.Id := PDTO.Id;
+
+    FRepository.Salvar(Produto);
+  finally
+    Produto.Free;
+  end;
 end;
 
 end.

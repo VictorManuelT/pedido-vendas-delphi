@@ -13,7 +13,9 @@ uses
   Vcl.Forms,
   Vcl.Dialogs,
   Vcl.StdCtrls,
-  Vcl.Grids, Vcl.NumberBox;
+  Vcl.Grids,
+  Vcl.NumberBox,
+  Vcl.Menus;
 
 type
   TFrmProducts = class(TForm)
@@ -27,11 +29,17 @@ type
     btnClose: TButton;
     grdProducts: TStringGrid;
     nbbSalePrice: TNumberBox;
+    bntEdit: TButton;
+    bntExcluir: TButton;
     procedure btnSaveClick(Sender: TObject);
+    procedure btnEditClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
+    procedure bntExcluirClick(Sender: TObject);
   private
+    FEditingId: Integer;
     procedure ClearFields;
     procedure ConfigureGrid;
+    procedure EditProduct;
   public
     procedure LoadProducts;
   end;
@@ -49,7 +57,6 @@ uses
   UJsonProductRepository,
   URegisterProduct,
   UListProduct,
-  UProductRepository,
   UProductDTO,
   UProduct;
 
@@ -77,16 +84,16 @@ var
   BasePath: string;
 begin
   ConfigureGrid;
-  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
-  Database := TJsonDatabase.Create(BasePath);
 
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) +'..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
   try
     Repository := TJsonProductRepository.Create(Database);
     try
       ListarProdutos := TListarProdutos.Create(Repository);
       try
         Produtos := ListarProdutos.Execute;
-
         try
           grdProducts.RowCount := Produtos.Count + 1;
 
@@ -95,11 +102,8 @@ begin
             Produto := Produtos[I];
 
             grdProducts.Cells[0, I + 1] := IntToStr(Produto.Id);
-
             grdProducts.Cells[1, I + 1] := Produto.Descricao;
-
-            grdProducts.Cells[2, I + 1] := FormatCurr('R$ #,##0.00', Produto.PrecoVenda);
-
+            grdProducts.Cells[2, I + 1] :=FormatCurr('R$ #,##0.00', Produto.PrecoVenda);
             grdProducts.Cells[3, I + 1] := Produto.UnidadeMedida;
           end;
         finally
@@ -121,7 +125,44 @@ begin
   edtDescription.Clear;
   nbbSalePrice.Clear;
   edtUnit.Clear;
+
+  FEditingId := 0;
+
   edtDescription.SetFocus;
+end;
+
+procedure TFrmProducts.EditProduct;
+var
+  Row: Integer;
+begin
+  Row := grdProducts.Row;
+
+  if Row <= 0 then
+  begin
+    ShowMessage('Selecione um produto para editar.');
+    Exit;
+  end;
+
+  FEditingId := StrToIntDef(grdProducts.Cells[0, Row], 0);
+
+  if FEditingId = 0 then
+  begin
+    ShowMessage('Produto inválido.');
+    Exit;
+  end;
+
+  edtDescription.Text := grdProducts.Cells[1, Row];
+
+  nbbSalePrice.Text := StringReplace(grdProducts.Cells[2, Row],'R$ ','',[rfReplaceAll]);
+
+  edtUnit.Text := grdProducts.Cells[3, Row];
+
+  edtDescription.SetFocus;
+end;
+
+procedure TFrmProducts.btnEditClick(Sender: TObject);
+begin
+  EditProduct;
 end;
 
 procedure TFrmProducts.btnSaveClick(Sender: TObject);
@@ -147,6 +188,13 @@ begin
     Exit;
   end;
 
+  if SalePrice < 0 then
+  begin
+    ShowMessage('O preço de venda não pode ser negativo.');
+    nbbSalePrice.SetFocus;
+    Exit;
+  end;
+
   if Trim(edtUnit.Text) = '' then
   begin
     ShowMessage('Informe a unidade de medida.');
@@ -154,11 +202,12 @@ begin
     Exit;
   end;
 
+  DTO.Id := FEditingId;
   DTO.Descricao := Trim(edtDescription.Text);
   DTO.PrecoVenda := SalePrice;
   DTO.UnidadeMedida := Trim(edtUnit.Text);
 
-  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) +'..\..\data';
 
   Database := TJsonDatabase.Create(BasePath);
   try
@@ -177,7 +226,59 @@ begin
     Database.Free;
   end;
 
-  ShowMessage('Produto cadastrado com sucesso.');
+  if FEditingId = 0 then
+    ShowMessage('Produto cadastrado com sucesso.')
+  else
+    ShowMessage('Produto atualizado com sucesso.');
+
+  ClearFields;
+  LoadProducts;
+end;
+
+procedure TFrmProducts.bntExcluirClick(Sender: TObject);
+var
+  Database: TJsonDatabase;
+  Repository: TJsonProductRepository;
+  BasePath: string;
+  Id: Integer;
+  Linha: Integer;
+begin
+  Linha := grdProducts.Row;
+
+  if Linha <= 0 then
+  begin
+    ShowMessage('Selecione um produto para excluir.');
+    Exit;
+  end;
+
+  Id := StrToIntDef(grdProducts.Cells[0, Linha], 0);
+
+  if Id = 0 then
+  begin
+    ShowMessage('Não foi possível identificar o produto selecionado.');
+    Exit;
+  end;
+
+  if MessageDlg('Deseja realmente excluir o produto "' +grdProducts.Cells[1, Linha] + '"?',mtConfirmation,[mbYes, mbNo],0) <> mrYes then
+    Exit;
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonProductRepository.Create(Database);
+    try
+      Repository.Excluir(Id);
+    finally
+      Repository.Free;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  ShowMessage('Produto excluído com sucesso.');
+
+  FEditingId := 0;
 
   ClearFields;
   LoadProducts;

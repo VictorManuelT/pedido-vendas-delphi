@@ -1,0 +1,240 @@
+unit UFrmProducts;
+
+interface
+
+uses
+  Winapi.Windows,
+  Winapi.Messages,
+  System.SysUtils,
+  System.Variants,
+  System.Classes,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Dialogs,
+  Vcl.StdCtrls,
+  Vcl.Grids,
+  Vcl.NumberBox, Vcl.Menus;
+
+type
+  TFrmProducts = class(TForm)
+    lblTitle: TLabel;
+    lblDescription: TLabel;
+    lblSalePrice: TLabel;
+    lblUnit: TLabel;
+    edtDescription: TEdit;
+    edtUnit: TEdit;
+    btnSave: TButton;
+    btnClose: TButton;
+    grdProducts: TStringGrid;
+    nbbSalePrice: TNumberBox;
+    bntEdit: TButton;
+    procedure btnSaveClick(Sender: TObject);
+    procedure btnEditClick(Sender: TObject);
+    procedure btnCloseClick(Sender: TObject);
+  private
+    FEditingId: Integer;
+    procedure ClearFields;
+    procedure ConfigureGrid;
+    procedure EditProduct;
+  public
+    procedure LoadProducts;
+  end;
+
+var
+  FrmProducts: TFrmProducts;
+
+implementation
+
+{$R *.dfm}
+
+uses
+  System.Generics.Collections,
+  UJsonDatabase,
+  UJsonProductRepository,
+  URegisterProduct,
+  UListProduct,
+  UProductDTO,
+  UProduct;
+
+procedure TFrmProducts.ConfigureGrid;
+begin
+  grdProducts.Cells[0, 0] := 'ID';
+  grdProducts.Cells[1, 0] := 'Descrição';
+  grdProducts.Cells[2, 0] := 'Preço de Venda';
+  grdProducts.Cells[3, 0] := 'Unidade de Medida';
+
+  grdProducts.ColWidths[0] := 60;
+  grdProducts.ColWidths[1] := 300;
+  grdProducts.ColWidths[2] := 130;
+  grdProducts.ColWidths[3] := 100;
+end;
+
+procedure TFrmProducts.LoadProducts;
+var
+  Database: TJsonDatabase;
+  Repository: TJsonProductRepository;
+  ListarProdutos: TListarProdutos;
+  Produtos: TObjectList<TProduct>;
+  Produto: TProduct;
+  I: Integer;
+  BasePath: string;
+begin
+  ConfigureGrid;
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) +'..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonProductRepository.Create(Database);
+    try
+      ListarProdutos := TListarProdutos.Create(Repository);
+      try
+        Produtos := ListarProdutos.Execute;
+        try
+          grdProducts.RowCount := Produtos.Count + 1;
+
+          for I := 0 to Produtos.Count - 1 do
+          begin
+            Produto := Produtos[I];
+
+            grdProducts.Cells[0, I + 1] := IntToStr(Produto.Id);
+            grdProducts.Cells[1, I + 1] := Produto.Descricao;
+            grdProducts.Cells[2, I + 1] :=FormatCurr('R$ #,##0.00', Produto.PrecoVenda);
+            grdProducts.Cells[3, I + 1] := Produto.UnidadeMedida;
+          end;
+        finally
+          Produtos.Free;
+        end;
+      finally
+        ListarProdutos.Free;
+      end;
+    finally
+      Repository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
+end;
+
+procedure TFrmProducts.ClearFields;
+begin
+  edtDescription.Clear;
+  nbbSalePrice.Clear;
+  edtUnit.Clear;
+
+  FEditingId := 0;
+
+  edtDescription.SetFocus;
+end;
+
+procedure TFrmProducts.EditProduct;
+var
+  Row: Integer;
+begin
+  Row := grdProducts.Row;
+
+  if Row <= 0 then
+  begin
+    ShowMessage('Selecione um produto para editar.');
+    Exit;
+  end;
+
+  FEditingId := StrToIntDef(grdProducts.Cells[0, Row], 0);
+
+  if FEditingId = 0 then
+  begin
+    ShowMessage('Produto inválido.');
+    Exit;
+  end;
+
+  edtDescription.Text := grdProducts.Cells[1, Row];
+
+  nbbSalePrice.Text := StringReplace(grdProducts.Cells[2, Row],'R$ ','',[rfReplaceAll]);
+
+  edtUnit.Text := grdProducts.Cells[3, Row];
+
+  edtDescription.SetFocus;
+end;
+
+procedure TFrmProducts.btnEditClick(Sender: TObject);
+begin
+  EditProduct;
+end;
+
+procedure TFrmProducts.btnSaveClick(Sender: TObject);
+var
+  Database: TJsonDatabase;
+  Repository: TJsonProductRepository;
+  CadastrarProduto: TCadastrarProduto;
+  DTO: TProductDTO;
+  SalePrice: Currency;
+  BasePath: string;
+begin
+  if Trim(edtDescription.Text) = '' then
+  begin
+    ShowMessage('Informe a descrição do produto.');
+    edtDescription.SetFocus;
+    Exit;
+  end;
+
+  if not TryStrToCurr(Trim(nbbSalePrice.Text), SalePrice) then
+  begin
+    ShowMessage('Informe um preço de venda válido.');
+    nbbSalePrice.SetFocus;
+    Exit;
+  end;
+
+  if SalePrice < 0 then
+  begin
+    ShowMessage('O preço de venda não pode ser negativo.');
+    nbbSalePrice.SetFocus;
+    Exit;
+  end;
+
+  if Trim(edtUnit.Text) = '' then
+  begin
+    ShowMessage('Informe a unidade de medida.');
+    edtUnit.SetFocus;
+    Exit;
+  end;
+
+  DTO.Id := FEditingId;
+  DTO.Descricao := Trim(edtDescription.Text);
+  DTO.PrecoVenda := SalePrice;
+  DTO.UnidadeMedida := Trim(edtUnit.Text);
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) +'..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonProductRepository.Create(Database);
+    try
+      CadastrarProduto := TCadastrarProduto.Create(Repository);
+      try
+        CadastrarProduto.Execute(DTO);
+      finally
+        CadastrarProduto.Free;
+      end;
+    finally
+      Repository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  if FEditingId = 0 then
+    ShowMessage('Produto cadastrado com sucesso.')
+  else
+    ShowMessage('Produto atualizado com sucesso.');
+
+  ClearFields;
+  LoadProducts;
+end;
+
+procedure TFrmProducts.btnCloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+end.

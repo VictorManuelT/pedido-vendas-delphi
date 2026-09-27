@@ -3,7 +3,7 @@ object FrmCustomers: TFrmCustomers
   Top = 0
   Caption = 'Cadastro de Pessoa'
   ClientHeight = 520
-  ClientWidth = 850
+  ClientWidth = 590
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -26,50 +26,50 @@ object FrmCustomers: TFrmCustomers
     ParentFont = False
   end
   object lblName: TLabel
-    Left = 24
-    Top = 75
+    Left = 32
+    Top = 59
     Width = 33
     Height = 13
     Caption = 'Nome:'
   end
   object lblCpfCnpj: TLabel
-    Left = 24
-    Top = 115
+    Left = 32
+    Top = 99
     Width = 50
     Height = 13
     Caption = 'CPF/CNPJ:'
   end
   object lblCity: TLabel
-    Left = 24
-    Top = 155
+    Left = 32
+    Top = 139
     Width = 39
     Height = 13
     Caption = 'Cidade:'
   end
   object edtName: TEdit
-    Left = 110
-    Top = 70
+    Left = 118
+    Top = 54
     Width = 350
     Height = 21
     TabOrder = 0
   end
   object edtCpfCnpj: TEdit
-    Left = 110
-    Top = 110
+    Left = 118
+    Top = 94
     Width = 220
     Height = 21
     TabOrder = 1
   end
   object edtCity: TEdit
-    Left = 110
-    Top = 150
+    Left = 118
+    Top = 134
     Width = 220
     Height = 21
     TabOrder = 2
   end
   object btnSave: TButton
-    Left = 500
-    Top = 70
+    Left = 24
+    Top = 161
     Width = 100
     Height = 30
     Caption = 'Salvar'
@@ -77,8 +77,8 @@ object FrmCustomers: TFrmCustomers
     OnClick = btnSaveClick
   end
   object btnClose: TButton
-    Left = 616
-    Top = 70
+    Left = 456
+    Top = 480
     Width = 100
     Height = 30
     Caption = 'Fechar'
@@ -87,8 +87,8 @@ object FrmCustomers: TFrmCustomers
   end
   object grdCustomers: TStringGrid
     Left = 24
-    Top = 210
-    Width = 796
+    Top = 194
+    Width = 548
     Height = 280
     ColCount = 4
     DefaultColWidth = 120
@@ -96,5 +96,24 @@ object FrmCustomers: TFrmCustomers
     RowCount = 1
     FixedRows = 0
     TabOrder = 5
+    OnSelectCell = grdCustomersSelectCell
+  end
+  object bntEdit: TButton
+    Left = 24
+    Top = 480
+    Width = 75
+    Height = 25
+    Caption = 'Editar'
+    TabOrder = 6
+    OnClick = bntEditClick
+  end
+  object bntExcluir: TButton
+    Left = 105
+    Top = 480
+    Width = 75
+    Height = 25
+    Caption = 'Excluir'
+    TabOrder = 7
+    OnClick = bntExcluirClick
   end
 end

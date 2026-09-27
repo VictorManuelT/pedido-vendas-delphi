@@ -24,6 +24,7 @@ type
     constructor Create(PDatabase: TJsonDatabase; PClienteRepository: TCustomerRepository; PProdutoRepository: TProductRepository);
 
     procedure Salvar(PPedido: TOrder);
+    procedure Excluir(PId: Integer);
     function ObterPorId(PId: Integer): TOrder;
     function Listar: TObjectList<TOrder>;
   end;
@@ -68,37 +69,78 @@ var
   JsonItens: TJSONArray;
   JsonItem: TJSONObject;
   Item: TOrderItem;
+  I: Integer;
+  PedidoExistente: Boolean;
 begin
-  if PPedido.Id = 0 then
-    PPedido.Id := ProximoId;
-
   JsonArray := FDatabase.CarregarArray('pedidos.json');
 
   try
-    JsonPedido := TJSONObject.Create;
+    PedidoExistente := False;
+    if PPedido.Id = 0 then
+      PPedido.Id := ProximoId;
 
+    for I := 0 to JsonArray.Count - 1 do
+    begin
+      JsonPedido := JsonArray.Items[I] as TJSONObject;
+
+      if JsonPedido.GetValue<Integer>('id') = PPedido.Id then
+      begin
+        PedidoExistente := True;
+        Break;
+      end;
+    end;
+
+    if not PedidoExistente then
+    begin
+      JsonPedido := TJSONObject.Create;
+      JsonArray.AddElement(JsonPedido);
+    end;
+
+    JsonPedido.RemovePair('id');
     JsonPedido.AddPair('id', TJSONNumber.Create(PPedido.Id));
 
-    JsonPedido.AddPair('clienteId', TJSONNumber.Create(PPedido.Cliente.Id));
-
+    JsonPedido.RemovePair('clienteId');
+    JsonPedido.AddPair('clienteId',TJSONNumber.Create(PPedido.Cliente.Id));
+    JsonPedido.RemovePair('itens');
     JsonItens := TJSONArray.Create;
 
     for Item in PPedido.Itens do
     begin
       JsonItem := TJSONObject.Create;
-
-      JsonItem.AddPair('produtoId', TJSONNumber.Create(Item.Produto.Id));
-    JsonItem.AddPair('quantidade', TJSONNumber.Create(Item.Quantidade));
-      JsonItem.AddPair('valorUnitario', TJSONNumber.Create(Item.ValorUnitario));
-
+      JsonItem.AddPair('produtoId',TJSONNumber.Create(Item.Produto.Id));
+      JsonItem.AddPair('quantidade',TJSONNumber.Create(Item.Quantidade));
+      JsonItem.AddPair('valorUnitario',TJSONNumber.Create(Item.ValorUnitario));
       JsonItens.AddElement(JsonItem);
     end;
 
     JsonPedido.AddPair('itens', JsonItens);
 
-    JsonArray.AddElement(JsonPedido);
-
     FDatabase.SalvarArray('pedidos.json', JsonArray);
+
+  finally
+    JsonArray.Free;
+  end;
+end;
+
+procedure TJsonOrderRepository.Excluir(PId: Integer);
+var
+  JsonArray: TJSONArray;
+  JsonPedido: TJSONObject;
+  I: Integer;
+begin
+  JsonArray := FDatabase.CarregarArray('pedidos.json');
+  try
+    for I := JsonArray.Count - 1 downto 0 do
+    begin
+      JsonPedido := JsonArray.Items[I] as TJSONObject;
+
+      if JsonPedido.GetValue<Integer>('id') = PId then
+      begin
+        JsonArray.Remove(I);
+        FDatabase.SalvarArray('pedidos.json', JsonArray);
+        Exit;
+      end;
+    end;
   finally
     JsonArray.Free;
   end;

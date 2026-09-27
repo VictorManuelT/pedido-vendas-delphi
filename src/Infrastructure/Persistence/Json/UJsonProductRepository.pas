@@ -17,6 +17,7 @@ type
   public
     constructor Create(PDatabase: TJsonDatabase);
 
+    procedure Excluir(PId: Integer);
     procedure Salvar(PProduto: TProduct);
     function ObterPorId(PId: Integer): TProduct;
     function Listar: TObjectList<TProduct>;
@@ -56,13 +57,35 @@ procedure TJsonProductRepository.Salvar(PProduto: TProduct);
 var
   JsonArray: TJSONArray;
   JsonObject: TJSONObject;
+  JsonExistente: TJSONObject;
+  I: Integer;
 begin
-  if PProduto.Id = 0 then
-    PProduto.Id := ProximoId;
-
   JsonArray := FDatabase.CarregarArray('produtos.json');
 
   try
+    if PProduto.Id = 0 then
+      PProduto.Id := ProximoId;
+
+    for I := 0 to JsonArray.Count - 1 do
+    begin
+      JsonExistente := JsonArray.Items[I] as TJSONObject;
+
+      if JsonExistente.GetValue<Integer>('id') = PProduto.Id then
+      begin
+        JsonExistente.RemovePair('descricao');
+        JsonExistente.AddPair('descricao',PProduto.Descricao);
+
+        JsonExistente.RemovePair('precoVenda');
+        JsonExistente.AddPair('precoVenda',TJSONNumber.Create(PProduto.PrecoVenda));
+        JsonExistente.RemovePair('unidadeMedida');
+        JsonExistente.AddPair('unidadeMedida',PProduto.UnidadeMedida);
+
+        FDatabase.SalvarArray('produtos.json',JsonArray);
+
+        Exit;
+      end;
+    end;
+
     JsonObject := TJSONObject.Create;
 
     JsonObject.AddPair('id',TJSONNumber.Create(PProduto.Id));
@@ -71,7 +94,34 @@ begin
     JsonObject.AddPair('unidadeMedida',PProduto.UnidadeMedida);
 
     JsonArray.AddElement(JsonObject);
+
     FDatabase.SalvarArray('produtos.json',JsonArray);
+
+  finally
+    JsonArray.Free;
+  end;
+end;
+
+procedure TJsonProductRepository.Excluir(PId: Integer);
+var
+  JsonArray: TJSONArray;
+  JsonObject: TJSONObject;
+  I: Integer;
+begin
+  JsonArray := FDatabase.CarregarArray('produtos.json');
+
+  try
+    for I := JsonArray.Count - 1 downto 0 do
+    begin
+      JsonObject := JsonArray.Items[I] as TJSONObject;
+
+      if JsonObject.GetValue<Integer>('id') = PId then
+      begin
+        JsonArray.Remove(I);
+        FDatabase.SalvarArray('produtos.json', JsonArray);
+        Exit;
+      end;
+    end;
   finally
     JsonArray.Free;
   end;

@@ -1,0 +1,78 @@
+unit UCreateOrder;
+
+interface
+
+uses
+  UOrderDTO,
+  UCustomerRepository,
+  UProductRepository,
+  UOrderRepository;
+
+type
+  TCreateOrder = class
+  private
+    FClienteRepository: TCustomerRepository;
+    FProdutoRepository: TProductRepository;
+    FPedidoRepository: IPedidoRepository;
+  public
+    constructor Create(PClienteRepository: TCustomerRepository;PProdutoRepository: TProductRepository;PPedidoRepository: IPedidoRepository);
+
+    procedure Execute(const PDTO: TPedidoDTO);
+  end;
+
+implementation
+
+uses
+  System.SysUtils,
+  UCustomer,
+  UProduct,
+  UOrder,
+  UDomainException,
+  UOrderItemDTO;
+
+constructor TCreateOrder.Create(PClienteRepository: TCustomerRepository;PProdutoRepository: TProductRepository;PPedidoRepository: IPedidoRepository);
+begin
+  FClienteRepository := PClienteRepository;
+  FProdutoRepository := PProdutoRepository;
+  FPedidoRepository := PPedidoRepository;
+end;
+
+procedure TCreateOrder.Execute(const PDTO: TPedidoDTO);
+var
+  Cliente: TCustomer;
+  Produto: TProduct;
+  Pedido: TOrder;
+  Item: TOrderItemDTO;
+begin
+  Cliente := FClienteRepository.ObterPorId(PDTO.ClienteId);
+
+  if not Assigned(Cliente) then
+    raise EDomainException.Create('Cliente não encontrado. ID: ' + IntToStr(PDTO.ClienteId));
+
+  Pedido := TOrder.Create(Cliente);
+
+  try
+    for Item in PDTO.Itens do
+    begin
+      if Item.ProdutoId <= 0 then
+        raise EDomainException.Create('Produto inválido no item do pedido.');
+
+      if Item.Quantidade <= 0 then
+        raise EDomainException.Create('A quantidade do produto deve ser maior que zero.');
+
+      Produto := FProdutoRepository.ObterPorId(Item.ProdutoId);
+
+      if not Assigned(Produto) then
+        raise EDomainException.Create('Produto não encontrado. ID: ' +IntToStr(Item.ProdutoId));
+
+      Pedido.AdicionarItem(Produto,Item.Quantidade,Produto.PrecoVenda);
+    end;
+
+    FPedidoRepository.Salvar(Pedido);
+
+  finally
+    Pedido.Free;
+  end;
+end;
+
+end.

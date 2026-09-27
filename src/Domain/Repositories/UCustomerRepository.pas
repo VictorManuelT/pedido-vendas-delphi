@@ -10,6 +10,7 @@ type
   TCustomerRepository = interface ['{D7B7D0B1-7F3B-4C4E-8B26-5E1D5B7D1001}']
 
     procedure Salvar(PCliente: TCustomer);
+    procedure Excluir(PId: Integer);
     function ObterPorId(PId: Integer): TCustomer;
     function Listar: TObjectList<TCustomer>;
   end;
