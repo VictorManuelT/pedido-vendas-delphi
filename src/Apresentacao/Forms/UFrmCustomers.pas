@@ -33,13 +33,11 @@ type
     btnSave: TButton;
     btnClose: TButton;
     grdCustomers: TStringGrid;
-    procedure FormCreate(Sender: TObject);
     procedure btnSaveClick(Sender: TObject);
-    procedure btnClearClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
+    procedure ConfigureGrid;
   private
     procedure ClearFields;
-    procedure ConfigureGrid;
   public
     procedure LoadCustomers;
   end;
@@ -51,17 +49,8 @@ implementation
 
 {$R *.dfm}
 
-procedure TFrmCustomers.FormCreate(Sender: TObject);
-begin
-  ConfigureGrid;
-end;
-
 procedure TFrmCustomers.ConfigureGrid;
 begin
-  grdCustomers.ColCount := 4;
-  grdCustomers.RowCount := 1;
-  grdCustomers.FixedRows := 1;
-
   grdCustomers.Cells[0, 0] := 'ID';
   grdCustomers.Cells[1, 0] := 'Nome';
   grdCustomers.Cells[2, 0] := 'CPF/CNPJ';
@@ -83,6 +72,7 @@ var
   I: Integer;
   BasePath : string;
 begin
+  ConfigureGrid;
   BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
   Database := TJsonDatabase.Create(BasePath);
   try
@@ -182,11 +172,6 @@ begin
 
   ClearFields;
   LoadCustomers;
-end;
-
-procedure TFrmCustomers.btnClearClick(Sender: TObject);
-begin
-  ClearFields;
 end;
 
 procedure TFrmCustomers.btnCloseClick(Sender: TObject);

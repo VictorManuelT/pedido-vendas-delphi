@@ -53,13 +53,6 @@ object FrmProducts: TFrmProducts
     Height = 21
     TabOrder = 0
   end
-  object edtSalePrice: TEdit
-    Left = 110
-    Top = 110
-    Width = 150
-    Height = 21
-    TabOrder = 1
-  end
   object edtUnit: TEdit
     Left = 110
     Top = 150
@@ -96,5 +89,14 @@ object FrmProducts: TFrmProducts
     RowCount = 1
     FixedRows = 0
     TabOrder = 5
+  end
+  object nbbSalePrice: TNumberBox
+    Left = 112
+    Top = 112
+    Width = 121
+    Height = 21
+    Mode = nbmCurrency
+    TabOrder = 1
+    NegativeValueColor = clRed
   end
 end

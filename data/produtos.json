@@ -1,0 +1,20 @@
+﻿[
+  {
+    "id": 1,
+    "descricao": "Teste Produto 1",
+    "precoVenda": 10.0,
+    "unidadeMedida": "Unidade"
+  },
+  {
+    "id": 2,
+    "descricao": "Teste Produto 2",
+    "precoVenda": 5.0,
+    "unidadeMedida": "Metros"
+  },
+  {
+    "id": 3,
+    "descricao": "Teste Produto 3",
+    "precoVenda": 50.0,
+    "unidadeMedida": "Caixa"
+  }
+]

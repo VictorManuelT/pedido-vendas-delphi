@@ -1,0 +1,81 @@
+unit UPrincipal;
+
+interface
+
+uses
+  Winapi.Windows,
+  Winapi.Messages,
+  System.SysUtils,
+  System.Variants,
+  System.Classes,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.Dialogs,
+  Vcl.StdCtrls;
+
+type
+  TFrmPrincipal = class(TForm)
+    lblTitulo: TLabel;
+    btnCustomers: TButton;
+    btnProducts: TButton;
+    btnOrders: TButton;
+    procedure btnCustomersClick(Sender: TObject);
+    procedure btnProductsClick(Sender: TObject);
+    procedure btnOrdersClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FrmPrincipal: TFrmPrincipal;
+
+implementation
+
+{$R *.dfm}
+
+uses
+  UFrmCustomers, UFrmProducts, UFrmOrders;
+
+procedure TFrmPrincipal.btnCustomersClick(Sender: TObject);
+var
+  Form: TFrmCustomers;
+begin
+  Form := TFrmCustomers.Create(Self);
+  try
+    Form.ShowModal;
+  finally
+    Form.Free;
+  end;
+end;
+
+procedure TFrmPrincipal.btnProductsClick(Sender: TObject);
+var
+  Form: TFrmProducts;
+begin
+  Form := TFrmProducts.Create(Self);
+  try
+    Form.LoadProducts;
+    Form.ShowModal;
+  finally
+    Form.Free;
+  end;
+end;
+
+procedure TFrmPrincipal.btnOrdersClick(Sender: TObject);
+var
+  Form: TFrmOrders;
+begin
+  Form := TFrmOrders.Create(Self);
+  try
+    Form.LoadCustomers;
+    Form.LoadProducts;
+    Form.ShowModal;
+  finally
+    Form.Free;
+  end;
+end;
+
+end.

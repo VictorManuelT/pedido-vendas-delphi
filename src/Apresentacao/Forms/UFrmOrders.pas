@@ -8,12 +8,24 @@ uses
   System.SysUtils,
   System.Variants,
   System.Classes,
+  System.Generics.Collections,
   Vcl.Graphics,
   Vcl.Controls,
   Vcl.Forms,
   Vcl.Dialogs,
   Vcl.StdCtrls,
-  Vcl.Grids;
+  Vcl.Grids,
+  UJsonDatabase,
+  UJsonCustomerRepository,
+  UJsonProductRepository,
+  UJsonOrderRepository,
+  UListCustomer,
+  UListProduct,
+  UCreateOrder,
+  UCustomer,
+  UProduct,
+  UOrderDTO,
+  UOrderItemDTO, Vcl.NumberBox;
 
 type
   TFrmOrders = class(TForm)
@@ -25,19 +37,19 @@ type
     cmbCustomer: TComboBox;
     cmbProduct: TComboBox;
     edtQuantity: TEdit;
-    edtUnitPrice: TEdit;
     btnAddItem: TButton;
     btnSave: TButton;
     btnClose: TButton;
     grdItems: TStringGrid;
     lblTotal: TLabel;
+    nbbUnitPrice: TNumberBox;
     procedure btnAddItemClick(Sender: TObject);
     procedure btnSaveClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure cmbProductChange(Sender: TObject);
-  private
     procedure ConfigureGrid;
+  private
     procedure ClearOrder;
     procedure UpdateTotal;
   public
@@ -54,10 +66,6 @@ implementation
 
 procedure TFrmOrders.ConfigureGrid;
 begin
-  grdItems.ColCount := 5;
-  grdItems.RowCount := 1;
-  grdItems.FixedRows := 1;
-
   grdItems.Cells[0, 0] := 'Produto';
   grdItems.Cells[1, 0] := 'Quantidade';
   grdItems.Cells[2, 0] := 'Preço Unitario';
@@ -72,18 +80,128 @@ begin
 end;
 
 procedure TFrmOrders.LoadCustomers;
+var
+  Database: TJsonDatabase;
+  Repository: TJsonCustomerRepository;
+  ListarClientes: TListarClientes;
+  Clientes: TObjectList<TCustomer>;
+  Cliente: TCustomer;
+  I: Integer;
+  BasePath: string;
 begin
-  { Será conectado ao TListarClientes posteriormente. }
+  ConfigureGrid;
+  cmbCustomer.Items.Clear;
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonCustomerRepository.Create(Database);
+    try
+      ListarClientes := TListarClientes.Create(Repository);
+      try
+        Clientes := ListarClientes.Execute;
+        try
+          for I := 0 to Clientes.Count - 1 do
+          begin
+            Cliente := Clientes[I];
+
+            cmbCustomer.Items.AddObject(Cliente.Nome, TObject(Cliente.Id));
+          end;
+        finally
+          Clientes.Free;
+        end;
+      finally
+        ListarClientes.Free;
+      end;
+    finally
+      Repository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  cmbCustomer.ItemIndex := -1;
 end;
 
 procedure TFrmOrders.LoadProducts;
+var
+  Database: TJsonDatabase;
+  Repository: TJsonProductRepository;
+  ListarProdutos: TListarProdutos;
+  Produtos: TObjectList<TProduct>;
+  Produto: TProduct;
+  I: Integer;
+  BasePath: string;
 begin
-  { Será conectado ao TListarProdutos posteriormente. }
+  cmbProduct.Items.Clear;
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonProductRepository.Create(Database);
+    try
+      ListarProdutos := TListarProdutos.Create(Repository);
+      try
+        Produtos := ListarProdutos.Execute;
+        try
+          for I := 0 to Produtos.Count - 1 do
+          begin
+            Produto := Produtos[I];
+
+            cmbProduct.Items.AddObject( Produto.Descricao, TObject(Produto.Id));
+          end;
+        finally
+          Produtos.Free;
+        end;
+      finally
+        ListarProdutos.Free;
+      end;
+    finally
+      Repository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  cmbProduct.ItemIndex := -1;
 end;
 
 procedure TFrmOrders.cmbProductChange(Sender: TObject);
+var
+  Database: TJsonDatabase;
+  Repository: TJsonProductRepository;
+  Produto: TProduct;
+  ProdutoId: Integer;
+  BasePath: string;
 begin
-  { Posteriormente vamos buscar o preço do Product selecionado. }
+  if cmbProduct.ItemIndex < 0 then
+  begin
+    nbbUnitPrice.Clear;
+    Exit;
+  end;
+
+  ProdutoId := Integer(cmbProduct.Items.Objects[cmbProduct.ItemIndex]);
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonProductRepository.Create(Database);
+    try
+      Produto := Repository.ObterPorId(ProdutoId);
+
+      if Assigned(Produto) then
+      begin
+        nbbUnitPrice.Text := CurrToStr(Produto.PrecoVenda);
+        Produto.Free;
+      end;
+    finally
+      Repository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
 end;
 
 procedure TFrmOrders.btnAddItemClick(Sender: TObject);
@@ -102,24 +220,28 @@ begin
   if not TryStrToCurr(edtQuantity.Text, Quantity) then
   begin
     ShowMessage('Informe uma quantidade valida.');
+    edtQuantity.SetFocus;
     Exit;
   end;
 
-  if not TryStrToCurr(edtUnitPrice.Text, UnitPrice) then
+  if not TryStrToCurr(nbbUnitPrice.Text, UnitPrice) then
   begin
     ShowMessage('Informe um preço unitario valido.');
+    nbbUnitPrice.SetFocus;
     Exit;
   end;
 
   if Quantity <= 0 then
   begin
     ShowMessage('A quantidade não pode ser menor ou igual a zero.');
+    edtQuantity.SetFocus;
     Exit;
   end;
 
   if UnitPrice < 0 then
   begin
     ShowMessage('O preço unitario não pode ser negativo.');
+    nbbUnitPrice.SetFocus;
     Exit;
   end;
 
@@ -133,9 +255,15 @@ begin
   grdItems.Cells[1, Row] := CurrToStr(Quantity);
   grdItems.Cells[2, Row] := CurrToStr(UnitPrice);
   grdItems.Cells[3, Row] := CurrToStr(LineTotal);
-  grdItems.Cells[4, Row] := IntToStr(cmbProduct.ItemIndex);
+  grdItems.Cells[4, Row] := IntToStr(Integer(cmbProduct.Items.Objects[cmbProduct.ItemIndex]));
 
   UpdateTotal;
+
+  cmbProduct.ItemIndex := -1;
+  edtQuantity.Clear;
+  nbbUnitPrice.Clear;
+
+  cmbProduct.SetFocus;
 end;
 
 procedure TFrmOrders.UpdateTotal;
@@ -152,8 +280,74 @@ begin
 end;
 
 procedure TFrmOrders.btnSaveClick(Sender: TObject);
+var
+  Database: TJsonDatabase;
+  CustomerRepository: TJsonCustomerRepository;
+  ProductRepository: TJsonProductRepository;
+  OrderRepository: TJsonOrderRepository;
+  CriarPedido: TCreateOrder;
+  BasePath: string;
+  PedidoDTO: TPedidoDTO;
+  ItemDTO: TOrderItemDTO;
+  I: Integer;
 begin
-  { Será conectado ao TCriarPedido posteriormente. }
+  if cmbCustomer.ItemIndex < 0 then
+  begin
+    ShowMessage('Selecione um cliente.');
+    cmbCustomer.SetFocus;
+    Exit;
+  end;
+
+  if grdItems.RowCount <= 1 then
+  begin
+    ShowMessage('Adicione pelo menos um item ao pedido.');
+    Exit;
+  end;
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    CustomerRepository := TJsonCustomerRepository.Create(Database);
+    try
+      ProductRepository := TJsonProductRepository.Create(Database);
+      try
+        OrderRepository := TJsonOrderRepository.Create(Database, CustomerRepository, ProductRepository);
+        try
+          CriarPedido := TCreateOrder.Create(CustomerRepository, ProductRepository, OrderRepository);
+          try
+            PedidoDTO.ClienteId := Integer(cmbCustomer.Items.Objects[cmbCustomer.ItemIndex]);
+
+            SetLength(PedidoDTO.Itens, grdItems.RowCount - 1);
+
+            for I := 1 to grdItems.RowCount - 1 do
+            begin
+              ItemDTO.ProdutoId := StrToIntDef(grdItems.Cells[4, I], 0);
+              ItemDTO.Quantidade := StrToCurrDef(grdItems.Cells[1, I], 0);
+
+              PedidoDTO.Itens[I - 1] := ItemDTO;
+            end;
+
+            CriarPedido.Execute(PedidoDTO);
+
+          finally
+            CriarPedido.Free;
+          end;
+        finally
+          OrderRepository.Free;
+        end;
+      finally
+        ProductRepository.Free;
+      end;
+    finally
+      CustomerRepository.Free;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  ShowMessage('Pedido cadastrado com sucesso.');
+  ClearOrder;
 end;
 
 procedure TFrmOrders.ClearOrder;
@@ -162,7 +356,7 @@ begin
   cmbProduct.ItemIndex := -1;
 
   edtQuantity.Clear;
-  edtUnitPrice.Clear;
+  nbbUnitPrice.Clear;
 
   grdItems.RowCount := 1;
 

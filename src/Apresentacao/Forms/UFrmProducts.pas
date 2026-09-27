@@ -13,7 +13,7 @@ uses
   Vcl.Forms,
   Vcl.Dialogs,
   Vcl.StdCtrls,
-  Vcl.Grids;
+  Vcl.Grids, Vcl.NumberBox;
 
 type
   TFrmProducts = class(TForm)
@@ -22,13 +22,12 @@ type
     lblSalePrice: TLabel;
     lblUnit: TLabel;
     edtDescription: TEdit;
-    edtSalePrice: TEdit;
     edtUnit: TEdit;
     btnSave: TButton;
     btnClose: TButton;
     grdProducts: TStringGrid;
+    nbbSalePrice: TNumberBox;
     procedure btnSaveClick(Sender: TObject);
-    procedure btnClearClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
   private
     procedure ClearFields;
@@ -44,12 +43,18 @@ implementation
 
 {$R *.dfm}
 
+uses
+  System.Generics.Collections,
+  UJsonDatabase,
+  UJsonProductRepository,
+  URegisterProduct,
+  UListProduct,
+  UProductRepository,
+  UProductDTO,
+  UProduct;
+
 procedure TFrmProducts.ConfigureGrid;
 begin
-  grdProducts.ColCount := 4;
-  grdProducts.RowCount := 1;
-  grdProducts.FixedRows := 1;
-
   grdProducts.Cells[0, 0] := 'ID';
   grdProducts.Cells[1, 0] := 'Descrição';
   grdProducts.Cells[2, 0] := 'Preço de Venda';
@@ -62,26 +67,120 @@ begin
 end;
 
 procedure TFrmProducts.LoadProducts;
+var
+  Database: TJsonDatabase;
+  Repository: TJsonProductRepository;
+  ListarProdutos: TListarProdutos;
+  Produtos: TObjectList<TProduct>;
+  Produto: TProduct;
+  I: Integer;
+  BasePath: string;
 begin
-  { Será conectado ao TListarProdutos posteriormente. }
+  ConfigureGrid;
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+  Database := TJsonDatabase.Create(BasePath);
+
+  try
+    Repository := TJsonProductRepository.Create(Database);
+    try
+      ListarProdutos := TListarProdutos.Create(Repository);
+      try
+        Produtos := ListarProdutos.Execute;
+
+        try
+          grdProducts.RowCount := Produtos.Count + 1;
+
+          for I := 0 to Produtos.Count - 1 do
+          begin
+            Produto := Produtos[I];
+
+            grdProducts.Cells[0, I + 1] := IntToStr(Produto.Id);
+
+            grdProducts.Cells[1, I + 1] := Produto.Descricao;
+
+            grdProducts.Cells[2, I + 1] := FormatCurr('R$ #,##0.00', Produto.PrecoVenda);
+
+            grdProducts.Cells[3, I + 1] := Produto.UnidadeMedida;
+          end;
+        finally
+          Produtos.Free;
+        end;
+      finally
+        ListarProdutos.Free;
+      end;
+    finally
+      Repository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
 end;
 
 procedure TFrmProducts.ClearFields;
 begin
   edtDescription.Clear;
-  edtSalePrice.Clear;
+  nbbSalePrice.Clear;
   edtUnit.Clear;
   edtDescription.SetFocus;
 end;
 
 procedure TFrmProducts.btnSaveClick(Sender: TObject);
+var
+  Database: TJsonDatabase;
+  Repository: TJsonProductRepository;
+  CadastrarProduto: TCadastrarProduto;
+  DTO: TProductDTO;
+  SalePrice: Currency;
+  BasePath: string;
 begin
-  { Será conectado ao TCadastrarProduto posteriormente. }
-end;
+  if Trim(edtDescription.Text) = '' then
+  begin
+    ShowMessage('Informe a descrição do produto.');
+    edtDescription.SetFocus;
+    Exit;
+  end;
 
-procedure TFrmProducts.btnClearClick(Sender: TObject);
-begin
+  if not TryStrToCurr(Trim(nbbSalePrice.Text), SalePrice) then
+  begin
+    ShowMessage('Informe um preço de venda válido.');
+    nbbSalePrice.SetFocus;
+    Exit;
+  end;
+
+  if Trim(edtUnit.Text) = '' then
+  begin
+    ShowMessage('Informe a unidade de medida.');
+    edtUnit.SetFocus;
+    Exit;
+  end;
+
+  DTO.Descricao := Trim(edtDescription.Text);
+  DTO.PrecoVenda := SalePrice;
+  DTO.UnidadeMedida := Trim(edtUnit.Text);
+
+  BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
+
+  Database := TJsonDatabase.Create(BasePath);
+  try
+    Repository := TJsonProductRepository.Create(Database);
+    try
+      CadastrarProduto := TCadastrarProduto.Create(Repository);
+      try
+        CadastrarProduto.Execute(DTO);
+      finally
+        CadastrarProduto.Free;
+      end;
+    finally
+      Repository := nil;
+    end;
+  finally
+    Database.Free;
+  end;
+
+  ShowMessage('Produto cadastrado com sucesso.');
+
   ClearFields;
+  LoadProducts;
 end;
 
 procedure TFrmProducts.btnCloseClick(Sender: TObject);
