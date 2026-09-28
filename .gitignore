@@ -5,13 +5,22 @@
 *.map
 *.drc
 
-# Arquivos temporarios
+# Arquivos temporários
 *.~*
 *.identcache
 *.local
 *.ddp
+*.dsk
+*.stat
 
-# Pastas de compilacao
+# Arquivos locais do projeto Delphi
+*.dproj.local
+*.tvsconfig
+
+# Histórico do Delphi
+__history/
+
+# Pastas de compilação
 Win32/
 Win64/
 Debug/
