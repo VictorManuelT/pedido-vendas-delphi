@@ -222,9 +222,7 @@ Os arquivos são criados dentro da pasta:
 
 ```text
 data/
-├── clientes.json
-├── produtos.json
-└── pedidos.json
+└── .gitkeep
 ```
 
 A escolha do JSON foi feita por ser uma solução simples para o teste e não exigir configuração de banco de dados para executar o projeto.
@@ -255,9 +253,7 @@ PedidoVendas/
 │       └── Forms/
 │
 ├── data/
-│   ├── clientes.json
-│   ├── produtos.json
-│   └── pedidos.json
+|    └── .gitkeep
 │
 ├── PedidoVendas.dpr
 ├── PedidoVendas.dproj
@@ -310,7 +306,9 @@ PedidoVendas.dproj
 
 4. Execute a aplicação.
 
-A pasta `data` contém os arquivos utilizados para persistência dos dados.
+A pasta data é utilizada para armazenar os arquivos JSON de persistência local da aplicação.
+
+Os arquivos JSON não são versionados pelo Git, permitindo que cada máquina mantenha seus próprios dados. Caso não existam, eles são criados automaticamente pela aplicação.
 
 Caso os arquivos JSON ainda não existam, eles serão criados pela aplicação conforme os dados forem cadastrados.
 
