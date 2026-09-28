@@ -97,6 +97,7 @@ var
   I: Integer;
   BasePath: string;
 begin
+  ConfigureGrid;
   BasePath := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + '..\..\data';
 
   Database := TJsonDatabase.Create(BasePath);
