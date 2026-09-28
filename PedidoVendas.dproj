@@ -161,6 +161,10 @@
             <Form>FrmOrders</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="src\Apresentacao\Forms\UFrmListOrders.pas">
+            <Form>FrmListOrders</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

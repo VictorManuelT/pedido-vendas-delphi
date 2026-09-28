@@ -27,7 +27,8 @@ uses
   UJsonOrderRepository in 'src\Infrastructure\Persistence\Json\UJsonOrderRepository.pas',
   UFrmCustomers in 'src\Apresentacao\Forms\UFrmCustomers.pas' {FrmCustomers},
   UFrmProducts in 'src\Apresentacao\Forms\UFrmProducts.pas' {FrmProducts},
-  UFrmOrders in 'src\Apresentacao\Forms\UFrmOrders.pas' {FrmOrders};
+  UFrmOrders in 'src\Apresentacao\Forms\UFrmOrders.pas' {FrmOrders},
+  UFrmListOrders in 'src\Apresentacao\Forms\UFrmListOrders.pas' {FrmListOrders};
 
 {$R *.res}
 
@@ -35,5 +36,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TFrmPrincipal, FrmPrincipal);
+  Application.CreateForm(TFrmListOrders, FrmListOrders);
   Application.Run;
 end.
