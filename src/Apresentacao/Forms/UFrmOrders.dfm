@@ -54,8 +54,8 @@ object FrmOrders: TFrmOrders
     Caption = 'Pre'#231'o Unitario:'
   end
   object lblTotal: TLabel
-    Left = 700
-    Top = 515
+    Left = 24
+    Top = 505
     Width = 230
     Height = 30
     Alignment = taRightJustify

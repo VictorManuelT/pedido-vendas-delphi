@@ -47,9 +47,9 @@ type
     btnSave: TButton;
     btnClose: TButton;
     grdItems: TStringGrid;
-    lblTotal: TLabel;
     nbbUnitPrice: TNumberBox;
     bntExcluirItem: TButton;
+    lblTotal: TLabel;
     procedure btnAddItemClick(Sender: TObject);
     procedure btnSaveClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
