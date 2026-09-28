@@ -1,0 +1,18 @@
+# Arquivos compilados do Delphi
+*.exe
+*.dll
+*.dcu
+*.map
+*.drc
+
+# Arquivos temporarios
+*.~*
+*.identcache
+*.local
+*.ddp
+
+# Pastas de compilacao
+Win32/
+Win64/
+Debug/
+Release/
