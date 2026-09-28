@@ -370,6 +370,7 @@ begin
       begin
         ItemDTO.ProdutoId := StrToIntDef(grdItems.Cells[4, I], 0);
         ItemDTO.Quantidade := StrToCurrDef(grdItems.Cells[1, I], 0);
+        ItemDTO.ValorUnitario := StrToCurrDef(grdItems.Cells[2, I], 0);
 
         PedidoDTO.Itens[I - 1] := ItemDTO;
       end;

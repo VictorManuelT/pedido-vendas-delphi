@@ -66,7 +66,7 @@ begin
       if not Assigned(Produto) then
         raise EDomainException.Create('Produto não encontrado. ID: ' +IntToStr(Item.ProdutoId));
 
-      Pedido.AdicionarItem(Produto,Item.Quantidade,Produto.PrecoVenda);
+      Pedido.AdicionarItem(Produto,Item.Quantidade,Item.ValorUnitario);
     end;
 
     FPedidoRepository.Salvar(Pedido);

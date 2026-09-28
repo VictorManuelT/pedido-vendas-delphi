@@ -16,3 +16,7 @@ Win32/
 Win64/
 Debug/
 Release/
+
+# Dados locais da aplicação
+data/*.json
+!data/.gitkeep
